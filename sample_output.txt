@@ -1,0 +1,82 @@
+=== Bitcoin Transaction Simulator ===
+Initial UTXOs (Genesis Block):
+Alice: 50.0 BTC
+Bob: 30.0 BTC
+Charlie: 20.0 BTC
+David: 10.0 BTC
+Eve: 5.0 BTC
+Main Menu:
+1. Create new transaction
+2. View UTXO set
+3. View mempool
+4. Mine block
+5. Run test scenarios
+6. Exit
+Enter choice: 1
+
+Enter sender: Alice
+Available balance: 50.0
+Enter recipient: Bob
+Enter amount: 10.0
+Creating transaction...
+Transaction valid! Fee: 0.001 BTC
+Transaction ID: tx_1738592811_4092
+Transaction added to mempool.
+Mempool now has 1 transactions.
+
+=== Bitcoin Transaction Simulator ===
+...
+Enter choice: 4
+
+Enter miner name: Miner1
+Mining block...
+Selected 1 transactions from mempool.
+Total fees: 0.001 BTC
+Miner Miner1 receives 0.001 BTC
+Block mined successfully!
+Removed 1 transactions from mempool.
+
+=== Bitcoin Transaction Simulator ===
+...
+Enter choice: 2
+
+--- Current UTXO Set ---
+(genesis, 1): 30.0 BTC (Bob)
+(genesis, 2): 20.0 BTC (Charlie)
+(genesis, 3): 10.0 BTC (David)
+(genesis, 4): 5.0 BTC (Eve)
+(tx_1738592811_4092, 0): 10.0 BTC (Bob)
+(tx_1738592811_4092, 1): 39.999 BTC (Alice)
+(coinbase_tx_1738592811_4092, 0): 0.001 BTC (Miner1)
+
+=== Bitcoin Transaction Simulator ===
+...
+Enter choice: 5
+
+Select test scenario (1-10) or Press Enter for all: 4
+Running scenario: 4...
+=== Running Test Scenario: 4 ===
+
+[Test 4] Mempool Double-Spend (Race Attack)
+Test: Alice tries to spend same UTXO twice
+TX1: Alice -> Bob (10 BTC) - VALID
+TX2: Alice -> Charlie (10 BTC) - REJECTED
+Error: UTXO genesis:0 already spent by tx_alice_bob_001
+------------------------------
+
+=== Bitcoin Transaction Simulator ===
+...
+Enter choice: 5
+
+Select test scenario (1-10) or Press Enter for all: 10
+Running scenario: 10...
+=== Running Test Scenario: 10 ===
+
+[Test 10] Unconfirmed Chain
+Result: False (Input ... does not exist in UTXO set.) - Expected: False (Standard Rule)
+------------------------------
+
+=== Bitcoin Transaction Simulator ===
+...
+Enter choice: 6
+Exiting...

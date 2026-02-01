@@ -11,20 +11,10 @@ class Validator:
             prev_tx = inp["prev_tx"]
             idx = inp["index"]
 
-            if utxo_manager.exists(prev_tx, idx):
-                utxo = utxo_manager.utxo_set.get((prev_tx, idx))
-            else:
-                found_in_mempool = False
-                for pending_tx in mempool.transactions:
-                    if pending_tx["tx_id"] == prev_tx:
-                        if idx < len(pending_tx["outputs"]):
-                            utxo_data = pending_tx["outputs"][idx]
-                            utxo = {"amount": utxo_data["amount"], "owner": utxo_data["address"]}
-                            found_in_mempool = True
-                            break
+            if not utxo_manager.exists(prev_tx, idx):
+                return False, f"Input {prev_tx}:{idx} does not exist in UTXO set."
 
-                if not found_in_mempool:
-                    return False, f"Input {prev_tx}:{idx} does not exist"
+            utxo = utxo_manager.utxo_set.get((prev_tx, idx))
 
             if utxo["owner"] != inp["owner"]:
                 return False, f"Signature mismatch for input {prev_tx}:{idx}"
@@ -40,11 +30,11 @@ class Validator:
             if out["amount"] < 0: return False, "Negative output."
 
         if total_in < total_out:
-            return False, f"Insufficient funds"
+            return False, f"Insufficient funds. In: {total_in}, Out: {total_out}"
 
         for key in input_keys:
             if key in mempool.spent_utxos:
-                spender_id = mempool.spent_utxos[key]
-                return False, f"Error: UTXO {key[0]}:{key[1]} already spent by {spender_id}"
+                spender = mempool.spent_utxos[key]
+                return False, f"Error: UTXO {key[0]}:{key[1]} already spent by {spender}"
 
         return True, "Transaction valid"

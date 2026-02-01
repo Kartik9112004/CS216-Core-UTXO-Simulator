@@ -1,1 +1,25 @@
-CS_216__Course_material_2026_2027-2-1.pdf
+# --- Python Basics ---
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual Environments
+venv/
+.env
+env/
+
+# --- IDE Settings (PyCharm/VS Code) ---
+.idea/
+.vscode/
+
+# --- Operating System Files ---
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+
+# --- Project Specific ---
+# Exclude the assignment PDF from the repo
+*.pdf
