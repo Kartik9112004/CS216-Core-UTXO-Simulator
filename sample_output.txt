@@ -25,25 +25,6 @@ Transaction added to mempool.
 Mempool now has 1 transactions.
 
 === Bitcoin Transaction Simulator ===
-Initial UTXOs (Genesis Block):
-Alice: 50.0 BTC
-Bob: 30.0 BTC
-Charlie: 20.0 BTC
-David: 10.0 BTC
-Eve: 5.0 BTC
-Main Menu:
-1. Create new transaction
-2. View UTXO set
-3. View mempool
-4. Mine block
-5. Run test scenarios
-6. Exit
-Enter choice: 3
-
---- Mempool (1 transactions) ---
-TxID: tx_1738592811_4092 | Inputs: 1 | Outputs: 2
-
-=== Bitcoin Transaction Simulator ===
 ...
 Enter choice: 4
 
@@ -76,13 +57,12 @@ Select test scenario (1-10) or Press Enter for all: 4
 Running scenario: 4...
 === Running Test Scenario: 4 ===
 
-[Test 4] Double-Spend Attempt (Race Attack)
+[Test 4] Mempool Double-Spend (Race Attack)
 Test: Alice tries to spend same UTXO twice
 TX1: Alice -> Bob (10 BTC) - VALID
 TX2: Alice -> Charlie (10 BTC) - REJECTED
 Error: UTXO genesis:0 already spent by tx_alice_bob_001
 ------------------------------
-=== Tests Complete ===
 
 === Bitcoin Transaction Simulator ===
 ...
@@ -92,10 +72,9 @@ Select test scenario (1-10) or Press Enter for all: 10
 Running scenario: 10...
 === Running Test Scenario: 10 ===
 
-[Test 10] Unconfirmed Chain (Bonus)
-Result: True (Transaction added to mempool) - Expected: True
+[Test 10] Unconfirmed Chain
+Result: False (Input ... does not exist in UTXO set.) - Expected: False (Standard Rule)
 ------------------------------
-=== Tests Complete ===
 
 === Bitcoin Transaction Simulator ===
 ...

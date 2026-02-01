@@ -16,29 +16,28 @@
 This project is a simplified, local simulation of the Bitcoin **UTXO (Unspent Transaction Output)** model implemented in Python. It demonstrates the lifecycle of a transaction from creation to validation, mempool buffering, and final confirmation via mining.
 
 Key features include:
-* **UTXO Management:** Efficient tracking of unspent coins using unique identifiers.
-* **Transaction Validation:** Strict enforcement of rules (input existence, signature checks, no double-spending).
+* **UTXO Management:** Efficient tracking of unspent coins using unique identifiers `(tx_id, index)`.
+* **Transaction Validation:** Strict enforcement of rules (input existence in confirmed set, signature checks, input >= output).
 * **Mempool Security:** Prevention of Race Attacks using "First-Seen" logic.
-* **Mining Simulation:** Block creation, ledger updates, and miner fee collection.
+* **Mining Simulation:** Block creation using FIFO selection and miner fee calculation.
 
 ---
 
-## 2. Design Choices & Implementation
-We implemented the simulation with a focus on efficiency and security logic as requested in the assignment.
+## 2. Implementation Details
+We implemented the simulation focusing on strict compliance with the Bitcoin protocol logic tailored for this assignment.
 
 ### Data Structures
-* **UTXO Set:** We used a **Python Dictionary** for the UTXO database.
-    * *Key:* A tuple `(tx_id, index)` to uniquely identify every output.
-    * *Value:* A dictionary `{'amount': float, 'owner': str}`.
-    * *Reasoning:* This allows for **O(1)** time complexity when validating inputs, ensuring the simulation remains fast.
+* **UTXO Set:** A Python Dictionary `{(tx_id, index): {'amount': float, 'owner': str}}` for O(1) validation lookup.
+* **Mempool:** A List for transactions and a Dictionary `spent_utxos` to track inputs used by pending transactions.
 
-### Conflict Resolution (Double-Spending)
-* **Internal Check:** The Validator ensures a single transaction does not reference the same UTXO twice in its own input list.
-* **Mempool Locking (Race Attack Protection):** The `Mempool` class maintains a dictionary called `spent_utxos`. When a transaction enters the mempool, its inputs are mapped to the transaction ID. If a second transaction arrives trying to spend the same inputs, it is immediately rejected with a specific error identifying the conflicting transaction.
+### Conflict Resolution
+* **Double-Spending:** Addressed at two levels:
+    1.  **Intra-Transaction:** A single transaction cannot reference the same input twice.
+    2.  **Mempool (Race Attack):** If an input is already locked by a pending transaction, subsequent attempts to spend it are rejected immediately.
 
 ### Mining Logic
-* The miner selects transactions from the mempool (FIFO basis), verifies them one last time, removes the spent inputs from the global UTXO set, and adds the new outputs.
-* Miner fees are calculated dynamically (`Sum(Inputs) - Sum(Outputs)`) and awarded via a special Coinbase transaction.
+* The miner selects transactions from the mempool in **First-In-First-Out (FIFO)** order.
+* It verifies inputs against the current UTXO set, removes spent inputs, adds new outputs, and awards the net fee to the miner via a Coinbase transaction.
 
 ---
 
@@ -46,7 +45,7 @@ We implemented the simulation with a focus on efficiency and security logic as r
 
 ### Prerequisites
 * Python 3.8 or higher.
-* No external libraries are required (uses standard `sys`, `time`, `random`, `os`).
+* No external libraries required.
 
 ### Steps
 1.  **Clone the Repository:**
@@ -56,32 +55,21 @@ We implemented the simulation with a focus on efficiency and security logic as r
     ```
 
 2.  **Run the Main Simulator (CLI):**
-    This starts the interactive menu where you can create transactions and mine blocks.
     ```bash
     python src/main.py
     ```
 
 3.  **Run Test Scenarios:**
-    You can run all tests or specific scenarios via the main menu (Option 5).
-    Alternatively, run them directly from the terminal:
     ```bash
     # Run all 10 mandatory tests
     python -m tests.test_scenarios
 
-    # Run specific double-spend test 
-    python -m tests.test_scenarios double_spend
+    # Run specific double-spend test (matches PDF output)
+    python -m tests.test_scenarios 4
     ```
 
 ---
 
 ## 4. Bonus Status
-* **Bonus Attempted:** **Yes**
-* **Description:** We implemented **Unconfirmed Transaction Chaining (Test 10)**.
-    1.  **Validator Update:** If an input is not found in the main UTXO set, the Validator searches the Mempool. If the parent transaction is found pending in the mempool, the input is accepted (simulating 0-conf chaining).
-    2.  **Miner Update:** The mining function implements a **Topological Sort**. It builds a dependency graph of transactions in the block to ensure that a parent transaction is always mined *before* its child transaction, preventing invalid blocks.
-
----
-
-## 5. Dependencies
-* **Standard Libraries:** `time`, `random`, `sys`, `os`
-* **External Packages:** None.
+* **Bonus Attempted:** **No**
+* **Note on Test 10:** We implemented the "Standard Rule" for Test 10. Transactions spending unconfirmed outputs (chained transactions) are **rejected** until the parent transaction is mined.

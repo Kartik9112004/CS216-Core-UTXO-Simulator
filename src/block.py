@@ -1,72 +1,53 @@
-import heapq
+def mine_block(miner_address: str, mempool, utxo_manager, num_txs=5):
+    txs_to_mine = mempool.transactions[:num_txs]
 
-
-def mine_block(miner_address, mempool, utxo_manager, num_txs=5):
-    pending_txs = mempool.transactions[:]
-    if not pending_txs:
+    if not txs_to_mine:
+        print("No transactions to mine.")
         return
 
-    tx_lookup = {tx["tx_id"]: tx for tx in pending_txs}
-    dependency_count = {tx["tx_id"]: 0 for tx in pending_txs}
-    dependency_graph = {tx["tx_id"]: [] for tx in pending_txs}
+    print("Mining block...")
+    print(f"Selected {len(txs_to_mine)} transactions from mempool.")
 
-    for tx in pending_txs:
-        for inp in tx["inputs"]:
-            parent_id = inp["prev_tx"]
-            if parent_id in tx_lookup:
-                dependency_graph[parent_id].append(tx["tx_id"])
-                dependency_count[tx["tx_id"]] += 1
+    total_fee = 0.0
+    valid_txs = []
 
-    candidate_queue = []
-
-    for tx in pending_txs:
-        if dependency_count[tx["tx_id"]] == 0:
-            fee = tx.get("fee", 0)
-            heapq.heappush(candidate_queue, (-fee, tx["tx_id"], tx))
-
-    final_block_txs = []
-
-    while len(final_block_txs) < num_txs and candidate_queue:
-        neg_fee, tx_id, current_tx = heapq.heappop(candidate_queue)
-        final_block_txs.append(current_tx)
-
-        if tx_id in dependency_graph:
-            for child_id in dependency_graph[tx_id]:
-                dependency_count[child_id] -= 1
-                if dependency_count[child_id] == 0:
-                    child_tx = tx_lookup[child_id]
-                    child_fee = child_tx.get("fee", 0)
-                    heapq.heappush(candidate_queue, (-child_fee, child_id, child_tx))
-
-    local_utxo_lookup = {}
-    total_block_reward = 0.0
-
-    for tx in final_block_txs:
-        input_total = 0.0
+    for tx in txs_to_mine:
+        input_sum = 0.0
+        valid_inputs = True
 
         for inp in tx["inputs"]:
-            utxo_key = (inp["prev_tx"], inp["index"])
+            if utxo_manager.exists(inp["prev_tx"], inp["index"]):
+                utxo = utxo_manager.utxo_set[(inp["prev_tx"], inp["index"])]
+                input_sum += utxo["amount"]
+            else:
+                print(f"Skipping invalid tx {tx['tx_id']}: Input missing")
+                valid_inputs = False
+                break
 
-            if utxo_manager.exists(*utxo_key):
-                utxo_data = utxo_manager.utxo_set[utxo_key]
-                input_total += utxo_data["amount"]
-                utxo_manager.remove_utxo(*utxo_key)
+        if not valid_inputs:
+            continue
 
-            elif utxo_key in local_utxo_lookup:
-                input_total += local_utxo_lookup[utxo_key]
+        for inp in tx["inputs"]:
+            utxo_manager.remove_utxo(inp["prev_tx"], inp["index"])
 
-        output_total = 0.0
-        for index, out in enumerate(tx["outputs"]):
-            amount = out["amount"]
-            output_total += amount
-            utxo_manager.add_utxo(tx["tx_id"], index, amount, out["address"])
-            local_utxo_lookup[(tx["tx_id"], index)] = amount
+        output_sum = 0.0
+        for i, out in enumerate(tx["outputs"]):
+            output_sum += out["amount"]
+            utxo_manager.add_utxo(tx["tx_id"], i, out["amount"], out["address"])
 
-        total_block_reward += (input_total - output_total)
+        total_fee += (input_sum - output_sum)
+        valid_txs.append(tx)
 
-    if total_block_reward >= 0:
-        coinbase_tx_id = f"coinbase_{final_block_txs[0]['tx_id']}"
-        utxo_manager.add_utxo(coinbase_tx_id, 0, total_block_reward, miner_address)
+    print(f"Total fees: {total_fee:.3f} BTC")
 
-    for tx in final_block_txs:
+    if total_fee >= 0:
+        coinbase_id = "coinbase_" + valid_txs[0]["tx_id"] if valid_txs else "coinbase_empty"
+        utxo_manager.add_utxo(coinbase_id, 0, total_fee, miner_address)
+        print(f"Miner {miner_address} receives {total_fee:.3f} BTC")
+
+    print("Block mined successfully!")
+
+    for tx in txs_to_mine:
         mempool.remove_transaction(tx["tx_id"])
+
+    print(f"Removed {len(txs_to_mine)} transactions from mempool.")
