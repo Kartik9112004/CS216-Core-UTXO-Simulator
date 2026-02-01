@@ -192,7 +192,7 @@ def run_tests():
         )
 
         success, msg = mempool.add_transaction(tx_b, utxo)
-        print(f"Result: {success} ({msg}) - Expected: False (Standard Rule)")
+        print(f"Result: {success} ({msg}) - Expected: False")
         print("-" * 30)
 
     print("=== Tests Complete ===")
